@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Gravador de Áudio</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; text-align: center; }
+    button { margin: 10px; padding: 10px 20px; font-size: 16px; }
+    audio { display: block; margin-top: 20px; }
+    #link-container { margin-top: 15px; }
+  </style>
+</head>
+<body>
+  <h2>Gravador de Áudio</h2>
+  <button id="start">🎙️ Iniciar Gravação</button>
+  <button id="stop" disabled>⏹️ Parar Gravação</button>
+  <audio id="audio" controls></audio>
+  <div id="link-container"></div>
+
+  <script>
+    let mediaRecorder;
+    let audioChunks = [];
+
+    const startBtn = document.getElementById('start');
+    const stopBtn = document.getElementById('stop');
+    const audioElement = document.getElementById('audio');
+    const linkContainer = document.getElementById('link-container');
+
+    startBtn.onclick = async () => {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream);
+      audioChunks = [];
+
+      mediaRecorder.ondataavailable = event => {
+        if (event.data.size > 0) {
+          audioChunks.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(audioChunks, { type: 'audio/webm' });
+        const audioUrl = URL.createObjectURL(blob);
+        audioElement.src = audioUrl;
+
+        const downloadLink = document.createElement('a');
+        downloadLink.href = audioUrl;
+        downloadLink.download = 'gravacao.webm';
+        downloadLink.textContent = '🔗 Baixar Gravação';
+        linkContainer.innerHTML = '';
+        linkContainer.appendChild(downloadLink);
+      };
+
+      mediaRecorder.start();
+      startBtn.disabled = true;
+      stopBtn.disabled = false;
+    };
+
+    stopBtn.onclick = () => {
+      mediaRecorder.stop();
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+    };
+  </script>
+</body>
+</html>
